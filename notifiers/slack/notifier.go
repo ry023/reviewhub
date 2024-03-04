@@ -3,6 +3,7 @@ package slack
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/ry023/reviewhub/reviewhub"
 	"github.com/slack-go/slack"
@@ -17,14 +18,28 @@ type SlackNotifier struct {
 	Channel string
 }
 
-func NewSlackNotifier(token string, channel string) *SlackNotifier {
+func New(config *reviewhub.NotifierConfig) (*SlackNotifier, error) {
+	validKeys := []string{
+		"api_token_env",
+		"channel",
+	}
+
+	for _, k := range validKeys {
+		_, ok := config.MetaData[k]
+		if !ok {
+			return nil, fmt.Errorf("MetaData '%s' not found", k)
+		}
+	}
+
+	token := os.Getenv(config.MetaData["api_token_env"])
+
 	return &SlackNotifier{
 		ApiToken: token,
-		Channel:  channel,
-	}
+		Channel:  config.MetaData["channel"],
+	}, nil
 }
 
-func (n *SlackNotifier) NotifyReviewPages(user reviewhub.User, ls []reviewhub.ReviewList) error {
+func (n *SlackNotifier) Notify(user reviewhub.User, ls []reviewhub.ReviewList) error {
 	cli := slack.New(n.ApiToken)
 
 	slackId, ok := user.MetaData[MetaDataSlackId]
