@@ -1,9 +1,9 @@
 package reviewhub
 
 type Config struct {
-	Providers []ProviderConfig
-	Notifiers []NotifierConfig
-	Users     []User
+	Retrievers []RetrieverConfig
+	Notifiers  []NotifierConfig
+	Users      []User
 }
 
 type NotifierConfig struct {
@@ -12,7 +12,7 @@ type NotifierConfig struct {
 	MetaData map[string]string
 }
 
-type ProviderConfig struct {
+type RetrieverConfig struct {
 	Name     string
 	Type     string
 	MetaData map[string]string
