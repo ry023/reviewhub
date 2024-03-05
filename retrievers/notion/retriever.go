@@ -2,7 +2,9 @@ package notion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/dstotijn/go-notion"
 	"github.com/ry023/reviewhub/reviewhub"
@@ -11,12 +13,43 @@ import (
 const MetaDataNotionId = "notion_id"
 
 type NotionRetriever struct {
-	Name              string
-	ApiToken          string
-	DatabaseId        string
-	ReviewersProperty string
-	Filter            *notion.DatabaseQueryFilter
-	StaticReviewers   []reviewhub.User
+	Name                string
+	ApiToken            string
+	DatabaseId          string
+	ReviewersProperty   string
+	Filter              *notion.DatabaseQueryFilter
+	StaticReviewerNames []string
+}
+
+type MetaData struct {
+	ApiTokenEnv       string   `yaml:"api_token_env" validate:"required"`
+	DatabaseId        string   `yaml:"database_id" validate:"required"`
+	ReviewersProperty string   `yaml:"reviewers_property" validate:"required"`
+	StaticReviewers   []string `yaml:"static_reviewers"`
+	Filter            string   `yaml:"filter"`
+}
+
+func New(config *reviewhub.RetrieverConfig) (*NotionRetriever, error) {
+	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
+	if err != nil {
+		return nil, err
+	}
+
+	token := os.Getenv(meta.ApiTokenEnv)
+
+	var filter *notion.DatabaseQueryFilter
+	if err = json.Unmarshal([]byte(meta.Filter), filter); err != nil {
+		return nil, err
+	}
+
+	return &NotionRetriever{
+		Name:                config.Name,
+		ApiToken:            token,
+		DatabaseId:          meta.DatabaseId,
+		ReviewersProperty:   meta.ReviewersProperty,
+		Filter:              filter,
+		StaticReviewerNames: meta.StaticReviewers,
+	}, nil
 }
 
 func (p *NotionRetriever) Retrieve(allUsers []reviewhub.User) (*reviewhub.ReviewList, error) {
@@ -56,7 +89,7 @@ func (p *NotionRetriever) Retrieve(allUsers []reviewhub.User) (*reviewhub.Review
 			return nil, err
 		}
 
-		reviewPage := reviewhub.NewReviewPage(title, page.URL, *owner, approved, subUser(p.StaticReviewers, *owner))
+		reviewPage := reviewhub.NewReviewPage(title, page.URL, *owner, approved, p.staticReviewers(allUsers, *owner))
 
 		if len(reviewPage.ApprovedReviewers) < len(reviewPage.Reviewers)-1 {
 			reviewPages = append(reviewPages, reviewPage)
@@ -67,6 +100,18 @@ func (p *NotionRetriever) Retrieve(allUsers []reviewhub.User) (*reviewhub.Review
 		Name:  p.Name,
 		Pages: reviewPages,
 	}, nil
+}
+
+func (r *NotionRetriever) staticReviewers(allUsers []reviewhub.User, owner reviewhub.User) []reviewhub.User {
+	var reviewers []reviewhub.User
+	for _, u := range allUsers {
+		for _, n := range r.StaticReviewerNames {
+			if u.Name == n && u.Name != owner.Name {
+				reviewers = append(reviewers, u)
+			}
+		}
+	}
+	return reviewers
 }
 
 func getTitle(props notion.DatabasePageProperties) (string, error) {
@@ -129,15 +174,4 @@ func getOwner(props notion.DatabasePageProperties, allUsers []reviewhub.User) (*
 		}
 	}
 	return reviewhub.NewUnknownUser(got.Name), nil
-}
-
-func subUser(us []reviewhub.User, target reviewhub.User) []reviewhub.User {
-	r := []reviewhub.User{}
-	for _, u := range us {
-		if u.Name == target.Name {
-			continue
-		}
-		r = append(r, u)
-	}
-	return r
 }
