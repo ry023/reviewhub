@@ -1,5 +1,5 @@
 package reviewhub
 
 type Retriever interface {
-	Retrieve([]User) (ReviewList, error)
+	Retrieve([]User) (*ReviewList, error)
 }
