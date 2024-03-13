@@ -1,6 +1,8 @@
 package reviewhub
 
 import (
+	"os"
+
 	"github.com/go-playground/validator"
 	"github.com/go-yaml/yaml"
 )
@@ -21,6 +23,20 @@ type RetrieverConfig struct {
 	Name     string
 	Type     string
 	MetaData any
+}
+
+func New(filepath string) (*Config, error) {
+	b, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	var config *Config
+	if err := yaml.Unmarshal(b, config); err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }
 
 func ParseMetaData[T any](raw any) (*T, error) {

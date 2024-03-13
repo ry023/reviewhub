@@ -1,8 +1,8 @@
 package reviewhub
 
 type User struct {
-	Name     string
-	MetaData map[string]string
+	Name     string            `yaml:"name" validate:"required"`
+	MetaData map[string]string `yaml:"metadata"`
 	Unknown  bool
 }
 
@@ -14,10 +14,10 @@ func NewUnknownUser(name string) *User {
 }
 
 func Contains(users []User, target User) bool {
-  for _, u := range users {
-    if u.Name == target.Name {
-      return true
-    }
-  }
-  return false
+	for _, u := range users {
+		if u.Name == target.Name {
+			return true
+		}
+	}
+	return false
 }
