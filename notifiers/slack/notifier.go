@@ -18,24 +18,22 @@ type SlackNotifier struct {
 	Channel string
 }
 
+type MetaData struct {
+	ApiTokenEnv string `yaml:"api_token_env" validate:"required"`
+	Channel     string `yaml:"channel" validate:"required"`
+}
+
 func New(config *reviewhub.NotifierConfig) (*SlackNotifier, error) {
-	validKeys := []string{
-		"api_token_env",
-		"channel",
+	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, k := range validKeys {
-		_, ok := config.MetaData[k]
-		if !ok {
-			return nil, fmt.Errorf("MetaData '%s' not found", k)
-		}
-	}
-
-	token := os.Getenv(config.MetaData["api_token_env"])
+	token := os.Getenv(meta.ApiTokenEnv)
 
 	return &SlackNotifier{
 		ApiToken: token,
-		Channel:  config.MetaData["channel"],
+		Channel:  meta.Channel,
 	}, nil
 }
 
