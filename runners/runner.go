@@ -58,12 +58,12 @@ func (r *ReviewHubRunner) Run() error {
 	}
 
 	for _, notifier := range r.notifiers {
-    for _, u := range r.users {
-      if err := notifier.Notify(u, ls); err != nil {
-			  log.Printf("Failed to notify to user: %s", err)
-			  break
-      }
-    }
+		for _, u := range r.users {
+			if err := notifier.Notify(u, ls); err != nil {
+				log.Printf("Failed to notify to user: %s", err)
+				break
+			}
+		}
 	}
 
 	return nil

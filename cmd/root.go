@@ -31,9 +31,9 @@ var rootCmd = &cobra.Command{
 			log.Fatalf("Failed to create runner: %v", err)
 		}
 
-    if err := r.Run(); err != nil {
+		if err := r.Run(); err != nil {
 			log.Fatalf("Failed to run: %v", err)
-    }
+		}
 	},
 }
 
