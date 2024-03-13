@@ -32,7 +32,7 @@ func NewConfig(filepath string) (*Config, error) {
 	}
 
 	var config *Config
-	if err := yaml.Unmarshal(b, config); err != nil {
+	if err := yaml.Unmarshal(b, &config); err != nil {
 		return nil, err
 	}
 
