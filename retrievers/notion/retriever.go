@@ -168,7 +168,6 @@ func getOwner(props notion.DatabasePageProperties, allUsers []reviewhub.User) (*
 		if !ok {
 			continue
 		}
-		fmt.Println(id)
 		if got.ID == id {
 			return &u, nil
 		}
