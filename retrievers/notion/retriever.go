@@ -38,7 +38,7 @@ func New(config *reviewhub.RetrieverConfig) (*NotionRetriever, error) {
 	token := os.Getenv(meta.ApiTokenEnv)
 
 	var filter *notion.DatabaseQueryFilter
-	if err = json.Unmarshal([]byte(meta.Filter), filter); err != nil {
+	if err = json.Unmarshal([]byte(meta.Filter), &filter); err != nil {
 		return nil, err
 	}
 
