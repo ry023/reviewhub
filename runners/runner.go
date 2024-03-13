@@ -2,6 +2,7 @@ package runner
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/ry023/reviewhub/notifiers/slack"
 	"github.com/ry023/reviewhub/retrievers/notion"
@@ -18,7 +19,57 @@ type ReviewHubRunner struct {
 
 var ErrNotBuiltIn error = fmt.Errorf("This type is not built-in")
 
-func (r *ReviewHubRunner) parseBuiltinNotifier(config *reviewhub.NotifierConfig) (reviewhub.Notifier, error) {
+func New(config *reviewhub.Config) (*ReviewHubRunner, error) {
+	var notifiers []reviewhub.Notifier
+	for _, c := range config.Notifiers {
+		n, err := parseBuiltinNotifier(&c)
+		if err != nil {
+			return nil, err
+		}
+		notifiers = append(notifiers, n)
+	}
+
+	var retrievers []reviewhub.Retriever
+	for _, c := range config.Retrievers {
+		r, err := parseBuiltinRetriever(&c)
+		if err != nil {
+			return nil, err
+		}
+		retrievers = append(retrievers, r)
+	}
+
+	return &ReviewHubRunner{
+		config:     *config,
+		notifiers:  notifiers,
+		users:      config.Users,
+		retrievers: retrievers,
+	}, nil
+}
+
+func (r *ReviewHubRunner) Run() error {
+	var ls []reviewhub.ReviewList
+	for _, retriever := range r.retrievers {
+		l, err := retriever.Retrieve(r.users)
+		if err != nil {
+			log.Printf("Failed to retrieve: %s", err)
+			break
+		}
+		ls = append(ls, *l)
+	}
+
+	for _, notifier := range r.notifiers {
+    for _, u := range r.users {
+      if err := notifier.Notify(u, ls); err != nil {
+			  log.Printf("Failed to notify to user: %s", err)
+			  break
+      }
+    }
+	}
+
+	return nil
+}
+
+func parseBuiltinNotifier(config *reviewhub.NotifierConfig) (reviewhub.Notifier, error) {
 	if config.Type == "" {
 		return nil, fmt.Errorf("'type' field empty")
 	}
@@ -31,7 +82,7 @@ func (r *ReviewHubRunner) parseBuiltinNotifier(config *reviewhub.NotifierConfig)
 	return nil, ErrNotBuiltIn
 }
 
-func (r *ReviewHubRunner) parseBuiltinRetriever(config *reviewhub.RetrieverConfig) (reviewhub.Retriever, error) {
+func parseBuiltinRetriever(config *reviewhub.RetrieverConfig) (reviewhub.Retriever, error) {
 	if config.Type == "" {
 		return nil, fmt.Errorf("'type' field empty")
 	}
