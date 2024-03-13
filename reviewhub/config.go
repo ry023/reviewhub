@@ -25,7 +25,7 @@ type RetrieverConfig struct {
 	MetaData any
 }
 
-func New(filepath string) (*Config, error) {
+func NewConfig(filepath string) (*Config, error) {
 	b, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, err

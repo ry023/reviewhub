@@ -1,34 +1,42 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"log"
 	"os"
 
+	"github.com/ry023/reviewhub/reviewhub"
+	"github.com/ry023/reviewhub/runners"
 	"github.com/spf13/cobra"
 )
 
-
-
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "reviewhub",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Use:   "run",
+	Short: "Retrieve all source and notify",
+	Run: func(cmd *cobra.Command, args []string) {
+		cf, err := cmd.Flags().GetString("config")
+		if err != nil {
+			log.Fatalf("Failed to load flag: %v", err)
+		}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+		config, err := reviewhub.NewConfig(cf)
+		if err != nil {
+			log.Fatalf("Failed to parse config file: %v", err)
+		}
+
+		r, err := runners.New(config)
+		if err != nil {
+			log.Fatalf("Failed to create runner: %v", err)
+		}
+
+    if err := r.Run(); err != nil {
+			log.Fatalf("Failed to run: %v", err)
+    }
+	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -37,15 +45,5 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.reviewhub.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringP("config", "c", ".config.yaml", "config file path")
 }
-
-
