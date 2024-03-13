@@ -91,7 +91,7 @@ func (p *NotionRetriever) Retrieve(allUsers []reviewhub.User) (*reviewhub.Review
 
 		reviewPage := reviewhub.NewReviewPage(title, page.URL, *owner, approved, p.staticReviewers(allUsers, *owner))
 
-		if len(reviewPage.ApprovedReviewers) < len(reviewPage.Reviewers)-1 {
+		if len(reviewPage.ApprovedReviewers) < len(reviewPage.Reviewers) {
 			reviewPages = append(reviewPages, reviewPage)
 		}
 	}
