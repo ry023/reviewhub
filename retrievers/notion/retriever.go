@@ -53,22 +53,32 @@ func New(config *reviewhub.RetrieverConfig) (*NotionRetriever, error) {
 }
 
 func (p *NotionRetriever) Retrieve(allUsers []reviewhub.User) (*reviewhub.ReviewList, error) {
-	// Get all notion pages
 	cli := notion.NewClient(p.ApiToken)
+
+	// Get all notion pages from the database
+	hasmore := true
+	nextCursor := ""
+	results := []notion.Page{}
 	ctx := context.Background()
+	for hasmore {
+		query := &notion.DatabaseQuery{
+			Filter:      p.Filter,
+			StartCursor: nextCursor,
+		}
 
-	query := &notion.DatabaseQuery{
-		Filter: p.Filter,
-	}
+		res, err := cli.QueryDatabase(ctx, p.DatabaseId, query)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, res.Results...)
 
-	res, err := cli.QueryDatabase(ctx, p.DatabaseId, query)
-	if err != nil {
-		return nil, err
+		hasmore = res.HasMore
+		nextCursor = *res.NextCursor
 	}
 
 	// Convert to ReviewPage format
 	var reviewPages []reviewhub.ReviewPage
-	for _, page := range res.Results {
+	for _, page := range results {
 		props, ok := page.Properties.(notion.DatabasePageProperties)
 		if !ok {
 			continue
