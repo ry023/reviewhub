@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/ry023/reviewhub/notifiers/slack"
+	"github.com/ry023/reviewhub/notifiers/stdout"
 	"github.com/ry023/reviewhub/retrievers/notion"
 	"github.com/ry023/reviewhub/reviewhub"
 )
@@ -78,6 +79,8 @@ func parseBuiltinNotifier(config *reviewhub.NotifierConfig) (reviewhub.Notifier,
 	switch config.Type {
 	case "slack":
 		return slack.New(config)
+	case "stdout":
+		return stdout.New(config)
 	}
 
 	return nil, ErrNotBuiltIn
