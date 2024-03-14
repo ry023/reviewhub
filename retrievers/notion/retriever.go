@@ -71,7 +71,7 @@ func (p *NotionRetriever) Retrieve(allUsers []reviewhub.User) (*reviewhub.Review
 	for _, page := range res.Results {
 		props, ok := page.Properties.(notion.DatabasePageProperties)
 		if !ok {
-			return nil, fmt.Errorf("Invalid page")
+			continue
 		}
 
 		title, err := getTitle(props)
