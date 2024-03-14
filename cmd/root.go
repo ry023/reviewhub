@@ -45,5 +45,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringP("config", "c", ".config.yaml", "config file path")
+	rootCmd.Flags().StringP("config", "c", "reviewhub.yaml", "config file path")
 }
