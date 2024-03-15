@@ -13,16 +13,18 @@ type Config struct {
 	Users      []User
 }
 
+type MetaData any
+
 type NotifierConfig struct {
 	Name     string
 	Type     string
-	MetaData any
+	MetaData MetaData
 }
 
 type RetrieverConfig struct {
 	Name     string
 	Type     string
-	MetaData any
+	MetaData MetaData
 }
 
 func NewConfig(filepath string) (*Config, error) {
@@ -39,7 +41,7 @@ func NewConfig(filepath string) (*Config, error) {
 	return config, nil
 }
 
-func ParseMetaData[T any](raw any) (*T, error) {
+func ParseMetaData[T any](raw MetaData) (*T, error) {
 	b, err := yaml.Marshal(raw)
 	if err != nil {
 		return nil, err

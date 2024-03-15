@@ -2,7 +2,7 @@ package reviewhub
 
 type User struct {
 	Name     string            `yaml:"name" validate:"required"`
-	MetaData map[string]string `yaml:"metadata"`
+	MetaData MetaData `yaml:"metadata"`
 	Unknown  bool
 }
 
