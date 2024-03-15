@@ -78,7 +78,7 @@ func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.Revi
 		if p.meta.StaticReviewers != nil && len(p.meta.StaticReviewers) > 0 {
 			reviewers = p.staticReviewers(knownUsers, owner)
 		} else {
-			us, err := page.peopleProp(p.meta.ApprovedUsersProperty, knownUsers)
+			us, err := page.peopleProp(p.meta.ReviewersProperty, knownUsers)
 			if err != nil {
 				return nil, fmt.Errorf("Failed to parse approved_users_property (%s): %w", p.meta.ApprovedUsersProperty, err)
 			}
