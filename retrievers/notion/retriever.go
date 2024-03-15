@@ -8,9 +8,9 @@ import (
 )
 
 type NotionRetriever struct {
-	Name     string
-	ApiToken string
-	MetaData MetaData
+	conf  reviewhub.RetrieverConfig
+	token string
+	meta  MetaData
 }
 
 type MetaData struct {
@@ -36,15 +36,14 @@ func New(config *reviewhub.RetrieverConfig) (*NotionRetriever, error) {
 	token := os.Getenv(meta.ApiTokenEnv)
 
 	return &NotionRetriever{
-		Name:     config.Name,
-		ApiToken: token,
-
-		MetaData: *meta,
+		conf:  *config,
+		token: token,
+		meta:  *meta,
 	}, nil
 }
 
 func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.ReviewList, error) {
-	pages, err := queryDatabase(p.MetaData.DatabaseId, p.MetaData.Filter, p.ApiToken)
+	pages, err := queryDatabase(p.meta.DatabaseId, p.meta.Filter, p.token)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to query database: %w", err)
 	}
@@ -52,22 +51,22 @@ func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.Revi
 	// Convert to ReviewPage format
 	var reviewPages []reviewhub.ReviewPage
 	for _, page := range pages {
-		title, err := page.title(p.MetaData.TitleProperty)
+		title, err := page.title(p.meta.TitleProperty)
 		if err != nil {
 			return nil, err
 		}
 
-		owners, err := page.peopleProp(p.MetaData.OwnerProperty, knownUsers)
+		owners, err := page.peopleProp(p.meta.OwnerProperty, knownUsers)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse owner_property (%s): %w", p.MetaData.OwnerProperty, err)
+			return nil, fmt.Errorf("Failed to parse owner_property (%s): %w", p.meta.OwnerProperty, err)
 		} else if len(owners) != 1 {
 			return nil, fmt.Errorf("owner must be one (owners=%v)", owners)
 		}
 		owner := owners[0]
 
-		approvedUsers, err := page.peopleProp(p.MetaData.ApprovedUsersProperty, knownUsers)
+		approvedUsers, err := page.peopleProp(p.meta.ApprovedUsersProperty, knownUsers)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse approved_users_property (%s): %w", p.MetaData.ApprovedUsersProperty, err)
+			return nil, fmt.Errorf("Failed to parse approved_users_property (%s): %w", p.meta.ApprovedUsersProperty, err)
 		}
 
 		url, err := page.url()
@@ -83,7 +82,7 @@ func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.Revi
 	}
 
 	return &reviewhub.ReviewList{
-		Name:  p.Name,
+		Name:  p.conf.Name,
 		Pages: reviewPages,
 	}, nil
 }
@@ -91,7 +90,7 @@ func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.Revi
 func (r *NotionRetriever) staticReviewers(knownUsers []reviewhub.User, owner reviewhub.User) []reviewhub.User {
 	var reviewers []reviewhub.User
 	for _, u := range knownUsers {
-		for _, n := range r.MetaData.StaticReviewers {
+		for _, n := range r.meta.StaticReviewers {
 			if u.Name == n && u.Name != owner.Name {
 				reviewers = append(reviewers, u)
 			}
