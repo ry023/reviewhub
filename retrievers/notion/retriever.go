@@ -59,12 +59,12 @@ func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.Revi
 
     owner, err := page.owner(p.MetaData.OwnerProperty, knownUsers)
     if err != nil {
-      return nil, err
+      return nil, fmt.Errorf("Failed to parse owner_property (%s): %w", p.MetaData.OwnerProperty, err)
     }
 
     approvedUsers, err := page.approvedUsers(p.MetaData.ApprovedUsersProperty, knownUsers)
     if err != nil {
-      return nil, err
+      return nil, fmt.Errorf("Failed to parse approved_users_property (%s): %w", p.MetaData.ApprovedUsersProperty, err)
     }
 
     url, err := page.url()

@@ -12,7 +12,7 @@ import (
 	"github.com/ry023/reviewhub/reviewhub"
 )
 
-const apiEndpoint = "https://api.notion.com/v1/"
+const apiEndpoint = "https://api.notion.com/v1"
 
 type queryParam struct {
 	Filter      any    `json:"filter,omitempty"`
@@ -87,7 +87,7 @@ func (p jsonPage) approvedUsers(prop string, knownUsers []reviewhub.User) ([]rev
 		},
 
 		// array path
-		prop, "people",
+		"properties", prop, "people",
 	)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func request(databaseId, token string, param queryParam) (*response, error) {
 
 	// parse response body
 	var res *response
-	if err := json.Unmarshal(resBody, res); err != nil {
+	if err := json.Unmarshal(resBody, &res); err != nil {
 		return nil, err
 	}
 	return res, nil
