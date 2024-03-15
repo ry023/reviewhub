@@ -64,9 +64,9 @@ func (p jsonPage) owner(prop string, knownUsers []reviewhub.User) (*reviewhub.Us
 	return reviewhub.NewUnknownUser(name), nil
 }
 
-func (p jsonPage) approvedUsers(prop string, knownUsers []reviewhub.User) ([]reviewhub.User, error) {
-  // parse properties
-	var propids []string
+func (p jsonPage) peopleProp(prop string, knownUsers []reviewhub.User) ([]reviewhub.User, error) {
+	var peopleIds []string
+	// parse properties
 	_, err := jsonparser.ArrayEach(
 		// json raw bytes
 		p,
@@ -83,7 +83,7 @@ func (p jsonPage) approvedUsers(prop string, knownUsers []reviewhub.User) ([]rev
 				log.Printf("Failed to parse reviewer's id: %v", err)
 				return
 			}
-			propids = append(propids, id)
+			peopleIds = append(peopleIds, id)
 		},
 
 		// array path
@@ -94,8 +94,8 @@ func (p jsonPage) approvedUsers(prop string, knownUsers []reviewhub.User) ([]rev
 	}
 
 	// search in known user
-  var approvedReviewers []reviewhub.User
-	for _, propid := range propids {
+	var people []reviewhub.User
+	for _, propid := range peopleIds {
 		for _, u := range knownUsers {
 			meta, err := reviewhub.ParseMetaData[UserMetaData](u.MetaData)
 			if err != nil {
@@ -104,14 +104,12 @@ func (p jsonPage) approvedUsers(prop string, knownUsers []reviewhub.User) ([]rev
 			}
 
 			if meta.NotionId == propid {
-        approvedReviewers = append(approvedReviewers, u)
+				people = append(people, u)
 			}
 		}
-
-    // TODO: add unknown user...
 	}
 
-	return approvedReviewers, nil
+	return people, nil
 }
 
 func queryDatabase(databaseId, filterJSON, token string) ([]jsonPage, error) {
