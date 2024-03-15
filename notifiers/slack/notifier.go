@@ -9,8 +9,6 @@ import (
 	"github.com/slack-go/slack"
 )
 
-const MetaDataSlackId = "slack_id"
-
 type SlackNotifier struct {
 	// Bot Token or User Token
 	ApiToken string
@@ -21,6 +19,10 @@ type SlackNotifier struct {
 type MetaData struct {
 	ApiTokenEnv string `yaml:"api_token_env" validate:"required"`
 	Channel     string `yaml:"channel" validate:"required"`
+}
+
+type UserMetaData struct {
+	SlackId string `yaml:"slack_id" validate:"required"`
 }
 
 func New(config *reviewhub.NotifierConfig) (*SlackNotifier, error) {
@@ -40,11 +42,12 @@ func New(config *reviewhub.NotifierConfig) (*SlackNotifier, error) {
 func (n *SlackNotifier) Notify(user reviewhub.User, ls []reviewhub.ReviewList) error {
 	cli := slack.New(n.ApiToken)
 
-	slackId, ok := user.MetaData[MetaDataSlackId]
-	if !ok {
-		// This user not slack information
+	meta, err := reviewhub.ParseMetaData[UserMetaData](user.MetaData)
+	if err != nil {
+		// user metadata not satisfied
 		return nil
 	}
+	slackId := meta.SlackId
 
 	b := []slack.Block{
 		// Header Block
@@ -65,8 +68,7 @@ func (n *SlackNotifier) Notify(user reviewhub.User, ls []reviewhub.ReviewList) e
 		b = append(b, slack.NewDividerBlock())
 	}
 
-	_, err := cli.PostEphemeral(n.Channel, slackId, slack.MsgOptionBlocks(b...))
-	if err != nil {
+	if _, err := cli.PostEphemeral(n.Channel, slackId, slack.MsgOptionBlocks(b...)); err != nil {
 		log.Printf("Failed to send to %s: %v", user.Name, err)
 	}
 
