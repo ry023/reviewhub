@@ -18,6 +18,7 @@ type MetaData struct {
 	DatabaseId            string   `yaml:"database_id" validate:"required"`
 	OwnerProperty         string   `yaml:"owner_property" validate:"required"`
 	ApprovedUsersProperty string   `yaml:"approved_users_property" validate:"required"`
+	ReviewersProperty     string   `yaml:"reviewers_property"`
 	TitleProperty         string   `yaml:"title_property" validate:"required"`
 	StaticReviewers       []string `yaml:"static_reviewers"`
 	Filter                string   `yaml:"filter"`
@@ -31,6 +32,10 @@ func New(config *reviewhub.RetrieverConfig) (*NotionRetriever, error) {
 	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
 	if err != nil {
 		return nil, err
+	}
+
+	if meta.ReviewersProperty == "" && (meta.StaticReviewers == nil || len(meta.StaticReviewers) == 0) {
+		return nil, fmt.Errorf("Either static_reviewers or reviewers_property required")
 	}
 
 	token := os.Getenv(meta.ApiTokenEnv)
@@ -69,12 +74,23 @@ func (p *NotionRetriever) Retrieve(knownUsers []reviewhub.User) (*reviewhub.Revi
 			return nil, fmt.Errorf("Failed to parse approved_users_property (%s): %w", p.meta.ApprovedUsersProperty, err)
 		}
 
+		var reviewers []reviewhub.User
+		if p.meta.StaticReviewers != nil && len(p.meta.StaticReviewers) > 0 {
+			reviewers = p.staticReviewers(knownUsers, owner)
+		} else {
+			us, err := page.peopleProp(p.meta.ApprovedUsersProperty, knownUsers)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to parse approved_users_property (%s): %w", p.meta.ApprovedUsersProperty, err)
+			}
+			reviewers = us
+		}
+
 		url, err := page.url()
 		if err != nil {
 			return nil, err
 		}
 
-		reviewPage := reviewhub.NewReviewPage(title, url, owner, approvedUsers, p.staticReviewers(knownUsers, owner))
+		reviewPage := reviewhub.NewReviewPage(title, url, owner, approvedUsers, reviewers)
 
 		if len(reviewPage.ApprovedReviewers) < len(reviewPage.Reviewers) {
 			reviewPages = append(reviewPages, reviewPage)
