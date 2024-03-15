@@ -3,7 +3,7 @@ module github.com/ry023/reviewhub
 go 1.21.6
 
 require (
-	github.com/dstotijn/go-notion v0.11.0
+	github.com/buger/jsonparser v1.1.1
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/slack-go/slack v0.12.5
