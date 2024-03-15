@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+
+	"github.com/buger/jsonparser"
+	"github.com/ry023/reviewhub/reviewhub"
 )
 
 const apiEndpoint = "https://api.notion.com/v1/"
@@ -15,16 +19,103 @@ type queryParam struct {
 	StartCursor string `json:"start_cursor,omitempty"`
 }
 
-type Page any
-
 type response struct {
-	Results    []Page  `json:"results"`
+	Results    []any   `json:"results"`
 	HasMore    bool    `json:"has_more"`
 	NextCursor *string `json:"next_cursor"`
 }
 
-func queryDatabase(databaseId, filterJSON, token string) ([]Page, error) {
-	var pages []Page
+type jsonPage []byte
+
+func (p jsonPage) title(prop string) (string, error) {
+	// TODO: parse richtext strictly
+	return jsonparser.GetString(p, "properties", prop, "title", "[0]", "text", "content")
+}
+
+func (p jsonPage) url() (string, error) {
+	// TODO: parse richtext strictly
+	return jsonparser.GetString(p, "url")
+}
+
+func (p jsonPage) owner(prop string, knownUsers []reviewhub.User) (*reviewhub.User, error) {
+	propid, err := jsonparser.GetString(p, "properties", prop, "people", "[0]", "id")
+	if err != nil {
+		return nil, err
+	}
+
+	// search in known user
+	for _, u := range knownUsers {
+		meta, err := reviewhub.ParseMetaData[UserMetaData](u.MetaData)
+		if err != nil {
+			log.Printf("Skip user %s because it may not have notion metadata: %v", u.Name, err)
+			continue
+		}
+
+		if meta.NotionId == propid {
+			return &u, nil
+		}
+	}
+
+	// return as unknown user
+	name, err := jsonparser.GetString(p, "properties", prop, "people", "[0]", "name")
+	if err != nil {
+		return nil, err
+	}
+	return reviewhub.NewUnknownUser(name), nil
+}
+
+func (p jsonPage) approvedUsers(prop string, knownUsers []reviewhub.User) ([]reviewhub.User, error) {
+  // parse properties
+	var propids []string
+	_, err := jsonparser.ArrayEach(
+		// json raw bytes
+		p,
+
+		// callback
+		func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			if err != nil {
+				log.Printf("Failed to parse reviewer array: %v", err)
+				return
+			}
+
+			id, err := jsonparser.GetString(value, "id")
+			if err != nil {
+				log.Printf("Failed to parse reviewer's id: %v", err)
+				return
+			}
+			propids = append(propids, id)
+		},
+
+		// array path
+		prop, "people",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// search in known user
+  var approvedReviewers []reviewhub.User
+	for _, propid := range propids {
+		for _, u := range knownUsers {
+			meta, err := reviewhub.ParseMetaData[UserMetaData](u.MetaData)
+			if err != nil {
+				log.Printf("Skip user %s because it may not have notion metadata: %v", u.Name, err)
+				continue
+			}
+
+			if meta.NotionId == propid {
+        approvedReviewers = append(approvedReviewers, u)
+			}
+		}
+
+    // TODO: add unknown user...
+	}
+
+	return approvedReviewers, nil
+}
+
+func queryDatabase(databaseId, filterJSON, token string) ([]jsonPage, error) {
+	var pages []jsonPage
 
 	var filter any
 	if err := json.Unmarshal([]byte(filterJSON), &filter); err != nil {
@@ -43,7 +134,13 @@ func queryDatabase(databaseId, filterJSON, token string) ([]Page, error) {
 			return nil, err
 		}
 
-		pages = append(pages, res.Results...)
+		for _, r := range res.Results {
+			b, err := json.Marshal(r)
+			if err != nil {
+				return nil, err
+			}
+			pages = append(pages, b)
+		}
 
 		more = res.HasMore
 		if res.NextCursor != nil {
