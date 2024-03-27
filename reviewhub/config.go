@@ -8,23 +8,23 @@ import (
 )
 
 type Config struct {
-	Retrievers []RetrieverConfig
-	Notifiers  []NotifierConfig
-	Users      []User
+	Retrievers []RetrieverConfig `yaml:"retrievers"`
+	Notifiers  []NotifierConfig  `yaml:"notifiers"`
+	Users      []User            `yaml:"users"`
 }
 
 type MetaData any
 
 type NotifierConfig struct {
-	Name     string
-	Type     string
-	MetaData MetaData
+	Name     string   `yaml:"name"`
+	Type     string   `yaml:"type"`
+	MetaData MetaData `yaml:"metadata"`
 }
 
 type RetrieverConfig struct {
-	Name     string
-	Type     string
-	MetaData MetaData
+	Name     string   `yaml:"name"`
+	Type     string   `yaml:"type"`
+	MetaData MetaData `yaml:"metadata"`
 }
 
 func NewConfig(filepath string) (*Config, error) {
