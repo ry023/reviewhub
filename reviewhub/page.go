@@ -30,30 +30,28 @@ type ReviewList struct {
 	Pages []ReviewPage
 }
 
-func FilterByReviewer(ls []ReviewList, u User, includeApproved bool) []ReviewList {
+func FilterReviewList(ls []ReviewList, reviewer User, includeApproved bool) []ReviewList {
 	var filtered []ReviewList
 	for _, l := range ls {
-		filtered = append(filtered, l.FilterByReviewer(u, includeApproved))
+		pages := []ReviewPage{}
+		for _, page := range l.Pages {
+			if !Contains(page.Reviewers, reviewer) {
+				continue
+			}
+
+			if includeApproved || Contains(page.ApprovedReviewers, reviewer) {
+				continue
+			}
+			pages = append(pages, page)
+		}
+
+		filtered = append(
+			filtered,
+			ReviewList{
+				Name:  l.Name,
+				Pages: pages,
+			},
+		)
 	}
 	return filtered
-}
-
-func (r ReviewList) FilterByReviewer(u User, includeApproved bool) ReviewList {
-	// Filter Review Pages
-	l := []ReviewPage{}
-	for _, page := range r.Pages {
-		if !Contains(page.Reviewers, u) {
-			continue
-		}
-
-		if includeApproved || Contains(page.ApprovedReviewers, u) {
-			continue
-		}
-		l = append(l, page)
-	}
-
-	return ReviewList{
-		Name:  r.Name,
-		Pages: l,
-	}
 }

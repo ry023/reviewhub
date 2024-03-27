@@ -60,7 +60,7 @@ func (r *ReviewHubRunner) Run() error {
 
 	for _, notifier := range r.notifiers {
 		for _, u := range r.users {
-			filtered := reviewhub.FilterByReviewer(ls, u, false)
+			filtered := reviewhub.FilterReviewList(ls, u, false)
 			if err := notifier.Notify(u, filtered); err != nil {
 				log.Printf("Failed to notify to user: %s", err)
 				break
