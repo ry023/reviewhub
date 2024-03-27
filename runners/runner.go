@@ -14,29 +14,45 @@ type ReviewHubRunner struct {
 	config reviewhub.Config
 
 	users      []reviewhub.User
-	notifiers  []reviewhub.Notifier
-	retrievers []reviewhub.Retriever
+	notifiers  []notifier
+	retrievers []retriever
+}
+
+type notifier struct {
+	config   reviewhub.NotifierConfig
+	notifier reviewhub.Notifier
+}
+
+type retriever struct {
+	config    reviewhub.RetrieverConfig
+	retriever reviewhub.Retriever
 }
 
 var ErrNotBuiltIn error = fmt.Errorf("This type is not built-in")
 
 func New(config *reviewhub.Config) (*ReviewHubRunner, error) {
-	var notifiers []reviewhub.Notifier
+	var notifiers []notifier
 	for _, c := range config.Notifiers {
 		n, err := parseBuiltinNotifier(&c)
 		if err != nil {
 			return nil, err
 		}
-		notifiers = append(notifiers, n)
+		notifiers = append(notifiers, notifier{
+			notifier: n,
+			config:   c,
+		})
 	}
 
-	var retrievers []reviewhub.Retriever
+	var retrievers []retriever
 	for _, c := range config.Retrievers {
 		r, err := parseBuiltinRetriever(&c)
 		if err != nil {
 			return nil, err
 		}
-		retrievers = append(retrievers, r)
+		retrievers = append(retrievers, retriever{
+			retriever: r,
+			config:    c,
+		})
 	}
 
 	return &ReviewHubRunner{
@@ -49,8 +65,8 @@ func New(config *reviewhub.Config) (*ReviewHubRunner, error) {
 
 func (r *ReviewHubRunner) Run() error {
 	var ls []reviewhub.ReviewList
-	for _, retriever := range r.retrievers {
-		l, err := retriever.Retrieve(r.users)
+	for _, v := range r.retrievers {
+		l, err := v.retriever.Retrieve(v.config, r.users)
 		if err != nil {
 			log.Printf("Failed to retrieve: %s", err)
 			break
@@ -58,10 +74,10 @@ func (r *ReviewHubRunner) Run() error {
 		ls = append(ls, *l)
 	}
 
-	for _, notifier := range r.notifiers {
+	for _, v := range r.notifiers {
 		for _, u := range r.users {
 			filtered := reviewhub.FilterReviewList(ls, u, false)
-			if err := notifier.Notify(u, filtered); err != nil {
+			if err := v.notifier.Notify(v.config, u, filtered); err != nil {
 				log.Printf("Failed to notify to user: %s", err)
 				break
 			}
@@ -78,9 +94,9 @@ func parseBuiltinNotifier(config *reviewhub.NotifierConfig) (reviewhub.Notifier,
 
 	switch config.Type {
 	case "slack":
-		return slack.New(config)
+		return new(slack.SlackNotifier), nil
 	case "stdout":
-		return stdout.New(config)
+		return new(stdout.StdoutNotifier), nil
 	}
 
 	return nil, ErrNotBuiltIn
@@ -93,7 +109,7 @@ func parseBuiltinRetriever(config *reviewhub.RetrieverConfig) (reviewhub.Retriev
 
 	switch config.Type {
 	case "notion":
-		return notion.New(config)
+		return new(notion.NotionRetriever), nil
 	}
 
 	return nil, ErrNotBuiltIn
