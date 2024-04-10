@@ -20,14 +20,9 @@ type MetaData struct {
 	Format string `yaml:"format"`
 }
 
-func New(config *reviewhub.NotifierConfig) (*StdoutNotifier, error) {
-	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
-	if err != nil {
-		return nil, err
-	}
-
-	format := meta.Format
-	if meta.Format == "" {
+func (m *MetaData) Validate() error {
+	format := m.Format
+	if m.Format == "" {
 		format = FormatPlainText
 	}
 
@@ -37,14 +32,23 @@ func New(config *reviewhub.NotifierConfig) (*StdoutNotifier, error) {
 	}
 	for _, v := range valid {
 		if v == format {
-			return &StdoutNotifier{Format: format}, nil
+			return nil
 		}
 	}
-	return nil, fmt.Errorf("Invalid format type: %s", format)
+	return fmt.Errorf("Invalid format type: %s", format)
 }
 
-func (n *StdoutNotifier) Notify(user reviewhub.User, ls []reviewhub.ReviewList) error {
-	switch n.Format {
+func (n *StdoutNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.User, ls []reviewhub.ReviewList) error {
+	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
+	if err != nil {
+		return err
+	}
+
+	if err := meta.Validate(); err != nil {
+		return err
+	}
+
+	switch meta.Format {
 	case FormatPlainText:
 		fmt.Printf("User: %s\n", user.Name)
 		for _, l := range ls {

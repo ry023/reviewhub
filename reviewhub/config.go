@@ -15,6 +15,10 @@ type Config struct {
 
 type MetaData any
 
+type Validator interface {
+	Validate() error
+}
+
 type NotifierConfig struct {
 	Name     string   `yaml:"name"`
 	Type     string   `yaml:"type"`
@@ -57,5 +61,6 @@ func ParseMetaData[T any](raw MetaData) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &m, nil
 }

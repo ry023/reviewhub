@@ -25,29 +25,20 @@ type UserMetaData struct {
 	SlackId string `yaml:"slack_id" validate:"required"`
 }
 
-func New(config *reviewhub.NotifierConfig) (*SlackNotifier, error) {
+func (n *SlackNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.User, ls []reviewhub.ReviewList) error {
 	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	token := os.Getenv(meta.ApiTokenEnv)
+	cli := slack.New(os.Getenv(meta.ApiTokenEnv))
 
-	return &SlackNotifier{
-		ApiToken: token,
-		Channel:  meta.Channel,
-	}, nil
-}
-
-func (n *SlackNotifier) Notify(user reviewhub.User, ls []reviewhub.ReviewList) error {
-	cli := slack.New(n.ApiToken)
-
-	meta, err := reviewhub.ParseMetaData[UserMetaData](user.MetaData)
+	usermeta, err := reviewhub.ParseMetaData[UserMetaData](config.MetaData)
 	if err != nil {
 		// user metadata not satisfied
 		return nil
 	}
-	slackId := meta.SlackId
+	slackId := usermeta.SlackId
 
 	b := []slack.Block{
 		// Header Block
