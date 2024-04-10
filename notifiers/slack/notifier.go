@@ -26,7 +26,7 @@ type UserMetaData struct {
 }
 
 func (n *SlackNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.User, ls []reviewhub.ReviewList) error {
-  meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
+	meta, err := reviewhub.ParseMetaData[MetaData](config.MetaData)
 	if err != nil {
 		return err
 	}

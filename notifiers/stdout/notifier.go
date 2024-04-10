@@ -44,9 +44,9 @@ func (n *StdoutNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.
 		return err
 	}
 
-  if err := meta.Validate(); err != nil {
-    return err
-  }
+	if err := meta.Validate(); err != nil {
+		return err
+	}
 
 	switch meta.Format {
 	case FormatPlainText:
