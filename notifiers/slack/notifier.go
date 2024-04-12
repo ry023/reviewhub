@@ -15,8 +15,10 @@ type SlackNotifier struct {
 }
 
 type MetaData struct {
-	ApiTokenEnv string `yaml:"api_token_env" validate:"required"`
-	Channel     string `yaml:"channel" validate:"required"`
+	ApiTokenEnv   string `yaml:"api_token_env" validate:"required"`
+	Channel       string `yaml:"channel" validate:"required"`
+	Title         string `yaml:"title"`
+	MessageIfVoid string `yaml:"message_if_void"`
 }
 
 type UserMetaData struct {
@@ -38,23 +40,37 @@ func (n *SlackNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.U
 	}
 	slackId := usermeta.SlackId
 
+	var title string
+	if meta.Title != "" {
+		title = meta.Title
+	} else {
+		title = fmt.Sprintf("Notification For You (%s)", user.Name)
+	}
+
 	b := []slack.Block{
 		// Header Block
 		slack.NewHeaderBlock(
 			slack.NewTextBlockObject(
-				slack.PlainTextType,
-				fmt.Sprintf("Notification For You (%s)", user.Name),
-				false,
-				false,
+				slack.PlainTextType, title, false, false,
 			),
 		),
 	}
 
 	for _, c := range ls {
-		// Page List
-		b = append(b, buildPageListBlock(c))
-		// Divider
-		b = append(b, slack.NewDividerBlock())
+		if len(c.Pages) > 0 {
+			// Page List
+			b = append(b, buildPageListBlock(c))
+		}
+	}
+
+	if len(b) == 0 && meta.MessageIfVoid != "" {
+		// Add meta.MessageIfVoid text as markdown
+		b = append(b,
+			slack.NewSectionBlock(
+				slack.NewTextBlockObject(slack.MarkdownType, meta.MessageIfVoid, true, false),
+				nil, nil,
+			),
+		)
 	}
 
 	if _, err := cli.PostEphemeral(meta.Channel, slackId, slack.MsgOptionBlocks(b...)); err != nil {
