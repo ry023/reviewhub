@@ -53,7 +53,8 @@ func (p *NotionRetriever) Retrieve(config reviewhub.RetrieverConfig, knownUsers 
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse owner_property (%s): %w", meta.OwnerProperty, err)
 		} else if len(owners) != 1 {
-			return nil, fmt.Errorf("owner must be single (owners=%v)", owners)
+			// skip if owner empty
+			continue
 		}
 		owner := owners[0]
 
