@@ -33,7 +33,7 @@ func (n *SlackNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.U
 
 	cli := slack.New(os.Getenv(meta.ApiTokenEnv))
 
-	usermeta, err := reviewhub.ParseMetaData[UserMetaData](config.MetaData)
+	usermeta, err := reviewhub.ParseMetaData[UserMetaData](user.MetaData)
 	if err != nil {
 		// user metadata not satisfied
 		return nil
