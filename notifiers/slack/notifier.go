@@ -63,11 +63,11 @@ func (n *SlackNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.U
 		}
 	}
 
-	if len(b) == 0 && meta.MessageIfVoid != "" {
+	if len(b) == 1 && meta.MessageIfVoid != "" {
 		// Add meta.MessageIfVoid text as markdown
 		b = append(b,
 			slack.NewSectionBlock(
-				slack.NewTextBlockObject(slack.MarkdownType, meta.MessageIfVoid, true, false),
+				slack.NewTextBlockObject(slack.MarkdownType, meta.MessageIfVoid, false, false),
 				nil, nil,
 			),
 		)
