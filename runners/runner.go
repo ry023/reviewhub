@@ -78,7 +78,7 @@ func (r *ReviewHubRunner) Run() error {
 		for _, u := range r.users {
 			filtered := reviewhub.FilterReviewList(ls, u, false)
 			if err := v.notifier.Notify(v.config, u, filtered); err != nil {
-				log.Printf("Failed to notify to user: %s", err)
+				log.Printf("Failed to notify to user by %T: %s", v.notifier, err)
 				break
 			}
 		}

@@ -13,7 +13,6 @@ const (
 )
 
 type StdoutNotifier struct {
-	Format string
 }
 
 type MetaData struct {
@@ -21,9 +20,8 @@ type MetaData struct {
 }
 
 func (m *MetaData) Validate() error {
-	format := m.Format
 	if m.Format == "" {
-		format = FormatPlainText
+		m.Format = FormatPlainText
 	}
 
 	valid := []string{
@@ -31,11 +29,11 @@ func (m *MetaData) Validate() error {
 		FormatPlainText,
 	}
 	for _, v := range valid {
-		if v == format {
+		if v == m.Format {
 			return nil
 		}
 	}
-	return fmt.Errorf("Invalid format type: %s", format)
+	return fmt.Errorf("Invalid format type: %s", m.Format)
 }
 
 func (n *StdoutNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.User, ls []reviewhub.ReviewList) error {
@@ -70,7 +68,7 @@ func (n *StdoutNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.
 		}
 		fmt.Println(string(b))
 	default:
-		return fmt.Errorf("Invalid format type: %s", n.Format)
+		return fmt.Errorf("Invalid format type: %s", meta.Format)
 	}
 
 	return nil
