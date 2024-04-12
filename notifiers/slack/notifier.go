@@ -12,8 +12,6 @@ import (
 type SlackNotifier struct {
 	// Bot Token or User Token
 	ApiToken string
-	// Destination
-	Channel string
 }
 
 type MetaData struct {
@@ -59,7 +57,7 @@ func (n *SlackNotifier) Notify(config reviewhub.NotifierConfig, user reviewhub.U
 		b = append(b, slack.NewDividerBlock())
 	}
 
-	if _, err := cli.PostEphemeral(n.Channel, slackId, slack.MsgOptionBlocks(b...)); err != nil {
+	if _, err := cli.PostEphemeral(meta.Channel, slackId, slack.MsgOptionBlocks(b...)); err != nil {
 		log.Printf("Failed to send to %s: %v", user.Name, err)
 	}
 
