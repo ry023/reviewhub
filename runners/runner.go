@@ -69,8 +69,7 @@ func (r *ReviewHubRunner) Run() error {
 	for _, v := range r.retrievers {
 		l, err := v.retriever.Retrieve(v.config, r.users)
 		if err != nil {
-			log.Printf("Failed to retrieve: %s", err)
-			break
+			return err
 		}
 		ls = append(ls, *l)
 	}
