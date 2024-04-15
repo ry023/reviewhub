@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-  "log"
 
 	"github.com/buger/jsonparser"
 )
@@ -70,6 +70,7 @@ query {
 		return nil, err
 	}
 
+	pages := []page{}
 	_, err = jsonparser.ArrayEach(
 		respBody,
 		// handler
@@ -78,8 +79,40 @@ query {
 				log.Printf("Failed to parse nodes: %v", err)
 				return
 			}
+
+			isAnswered, err := jsonparser.GetBoolean(value, "isAnswered")
+			if err != nil {
+				return
+			}
+			closed, err := jsonparser.GetBoolean(value, "closed")
+			if err != nil {
+				return
+			}
+			title, err := jsonparser.GetString(value, "title")
+			if err != nil {
+				return
+			}
+			url, err := jsonparser.GetString(value, "url")
+			if err != nil {
+				return
+			}
+			authorLogin, err := jsonparser.GetString(value, "author", "login")
+			if err != nil {
+				return
+			}
+			pages = append(pages, page{
+				isAnswered:  isAnswered,
+				closed:      closed,
+				title:       title,
+				url:         url,
+				authorLogin: authorLogin,
+			})
 		},
 		// array path
 		"data", "repository", "discussions", "nodes",
 	)
+	if err != nil {
+		return nil, err
+	}
+	return pages, nil
 }
