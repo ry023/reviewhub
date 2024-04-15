@@ -17,7 +17,7 @@ type MetaData struct {
 }
 
 type UserMetaData struct {
-	GitHubId string `yaml:"github_id" validate:"required"`
+	GitHubId string `yaml:"github_id"`
 }
 
 const defaultApiEndpoint = "https://api.github.com/graphql"
@@ -47,12 +47,13 @@ func (p *GitHubDiscussionsRetriever) Retrieve(config reviewhub.RetrieverConfig, 
 		}
 
 		for _, page := range pages {
-			if page.authorLogin == umeta.GitHubId {
-				l = append(l,
-					// all member as reviewers and 0 approved members
-					reviewhub.NewReviewPage(page.title, page.url, u, []reviewhub.User{}, knownUsers),
-				)
-				break
+			if page.authorLogin == umeta.GitHubId || page.authorLogin == u.Name {
+				if !page.closed && !page.isAnswered {
+					l = append(l,
+						// all member as reviewers and 0 approved members
+						reviewhub.NewReviewPage(page.title, page.url, u, []reviewhub.User{}, knownUsers),
+					)
+				}
 			}
 		}
 	}
