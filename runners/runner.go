@@ -6,6 +6,7 @@ import (
 
 	"github.com/ry023/reviewhub/notifiers/slack"
 	"github.com/ry023/reviewhub/notifiers/stdout"
+	"github.com/ry023/reviewhub/retrievers/ghdiscussions"
 	"github.com/ry023/reviewhub/retrievers/notion"
 	"github.com/ry023/reviewhub/reviewhub"
 )
@@ -110,6 +111,8 @@ func parseBuiltinRetriever(config *reviewhub.RetrieverConfig) (reviewhub.Retriev
 	switch config.Type {
 	case "notion":
 		return new(notion.NotionRetriever), nil
+	case "github-discussions":
+		return new(ghdiscussions.GitHubDiscussionsRetriever), nil
 	}
 
 	return nil, ErrNotBuiltIn
