@@ -19,7 +19,7 @@ type page struct {
 	authorLogin string
 }
 
-func request(owner, repository, token, apiendpoint string) ([]page, error) {
+func request(repositoryOwner, repository, token, apiEndpoint string) ([]page, error) {
 	// GraphQL Query
 	query := fmt.Sprintf(`
 query {
@@ -38,7 +38,7 @@ query {
   }
 }
 `,
-		owner, repository,
+		repositoryOwner, repository,
 	)
 
 	// build json request body
@@ -51,7 +51,7 @@ query {
 	}
 
 	// build http request
-	req, err := http.NewRequest(http.MethodPost, "https://api.github.com/graphql", bytes.NewReader(bodybytes))
+	req, err := http.NewRequest(http.MethodPost, apiEndpoint, bytes.NewReader(bodybytes))
 	if err != nil {
 		return nil, err
 	}
